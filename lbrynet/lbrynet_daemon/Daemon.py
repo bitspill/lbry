@@ -48,7 +48,7 @@ from lbrynet.core.Wallet import LBRYcrdWallet, LBRYumWallet
 from lbrynet.core.looping_call_manager import LoopingCallManager
 from lbrynet.core.server.BlobRequestHandler import BlobRequestHandlerFactory
 from lbrynet.core.server.ServerProtocol import ServerProtocolFactory
-from lbrynet.core.Error import InsufficientFundsError, InvalidNameError, UnknownNameError
+from lbrynet.core.Error import InsufficientFundsError, InvalidNameError
 
 
 log = logging.getLogger(__name__)
@@ -97,7 +97,7 @@ NOT_FOUND = 404
 OK_CODE = 200
 
 PENDING_LBRY_ID = "not set"
-
+SHORT_LBRY_ID_LEN = 20
 
 class Checker:
     """The looping calls the daemon runs"""
@@ -438,12 +438,12 @@ class Daemon(AuthJSONRPCServer):
         if not self.connected_to_internet:
             self.connection_problem = CONNECTION_PROBLEM_CODES[1]
 
-    # claim_out is dictionary containing 'txid' and 'nout' 
+    # claim_out is dictionary containing 'txid' and 'nout'
     def _add_to_pending_claims(self, name, claim_out):
         txid = claim_out['txid']
         nout = claim_out['nout'] 
         log.info("Adding lbry://%s to pending claims, txid %s nout %d" % (name, txid, nout))
-        self.pending_claims[name] = (txid,nout)
+        self.pending_claims[name] = (txid, nout)
         return claim_out
 
     def _check_pending_claims(self):
@@ -460,7 +460,7 @@ class Daemon(AuthJSONRPCServer):
         def re_add_to_pending_claims(name):
             log.warning("Re-add %s to pending claims", name)
             txid, nout = self.pending_claims.pop(name)
-            claim_out = {'txid':txid,'nout':nout} 
+            claim_out = {'txid':txid, 'nout':nout}
             self._add_to_pending_claims(name, claim_out)
 
         def _process_lbry_file(name, lbry_file):
@@ -468,7 +468,7 @@ class Daemon(AuthJSONRPCServer):
             # TODO: check for sd_hash in addition to txid
             ready_to_start = (
                 lbry_file and
-                self.pending_claims[name] == (lbry_file.txid,lbry_file.nout)
+                self.pending_claims[name] == (lbry_file.txid, lbry_file.nout)
             )
             if ready_to_start:
                 _get_and_start_file(name)
@@ -593,7 +593,7 @@ class Daemon(AuthJSONRPCServer):
     def _upload_log(self, log_type=None, exclude_previous=False, force=False):
         if self.upload_log or force:
             if self.lbryid is not PENDING_LBRY_ID:
-                id_hash = base58.b58encode(self.lbryid)[:20]
+                id_hash = base58.b58encode(self.lbryid)[:SHORT_LBRY_ID_LEN]
             else:
                 id_hash = self.lbryid
             try:
@@ -680,7 +680,7 @@ class Daemon(AuthJSONRPCServer):
 
         return defer.succeed(True)
 
-    def _write_db_revision_file(self,version_num): 
+    def _write_db_revision_file(self, version_num):
         with open(self.db_revision_file, mode='w') as db_revision:
             db_revision.write(str(version_num))
 
@@ -694,7 +694,7 @@ class Daemon(AuthJSONRPCServer):
         if not os.path.exists(self.blobfile_dir):
             os.mkdir(self.blobfile_dir)
             log.debug("Created the blobfile directory: %s", str(self.blobfile_dir))
-        if not os.path.exists(self.db_revision_file):             
+        if not os.path.exists(self.db_revision_file):
             log.warning("db_revision file not found. Creating it")
             self._write_db_revision_file(old_revision)
 
@@ -1209,6 +1209,32 @@ class Daemon(AuthJSONRPCServer):
         log.info("Get version info: " + json.dumps(msg))
         return self._render_response(msg, OK_CODE)
 
+    def jsonrpc_get_lbry_session_info(self):
+        """
+        Get information about the current lbrynet session
+
+        Args:
+            None
+        Returns:
+            'lbry_id': string,
+            'managed_blobs': int, number of completed blobs in the blob manager,
+            'managed_streams': int, number of lbry files in the file manager
+        """
+
+        d = self.session.blob_manager.get_all_verified_blobs()
+
+        def _prepare_message(blobs):
+            msg = {
+                'lbry_id': base58.b58encode(self.lbryid)[:SHORT_LBRY_ID_LEN],
+                'managed_blobs': len(blobs),
+                'managed_streams': len(self.lbry_file_manager.lbry_files),
+            }
+            return msg
+
+        d.addCallback(_prepare_message)
+        d.addCallback(lambda r: self._render_response(r, OK_CODE))
+        return d
+
     def jsonrpc_get_settings(self):
         """
         Get lbrynet daemon settings
@@ -1712,7 +1738,7 @@ class Daemon(AuthJSONRPCServer):
             success : True if succesful , False otherwise
             reason : if not succesful, give reason
             txid : txid of resulting transaction if succesful
-            fee : fee paid for the transaction if succesful 
+            fee : fee paid for the transaction if succesful
         """
         if 'txid' in p.keys() and 'nout' in p.keys():
             txid = p['txid']
@@ -1725,7 +1751,7 @@ class Daemon(AuthJSONRPCServer):
             return self._render_response(x, OK_CODE)
 
         d = defer.Deferred()
-        d.addCallback(lambda _: self.session.wallet.abandon_claim(txid,nout))
+        d.addCallback(lambda _: self.session.wallet.abandon_claim(txid, nout))
         d.addCallback(_disp)
         d.callback(None)
 
