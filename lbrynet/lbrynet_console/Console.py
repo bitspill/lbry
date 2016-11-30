@@ -1,3 +1,5 @@
+# pylint: skip-file
+#
 # TODO: THERE IS A LOT OF CODE IN THIS MODULE THAT SHOULD BE REMOVED
 #       AS IT IS REPEATED IN THE LBRYDaemon MODULE
 import logging

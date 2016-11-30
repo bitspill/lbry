@@ -1,3 +1,5 @@
+# pylint: skip-file
+
 from twisted.protocols import basic
 from twisted.internet import defer
 import logging

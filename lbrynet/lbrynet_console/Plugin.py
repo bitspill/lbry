@@ -1,3 +1,5 @@
+# pylint: skip-file
+
 from yapsy.IPlugin import IPlugin
 
 
