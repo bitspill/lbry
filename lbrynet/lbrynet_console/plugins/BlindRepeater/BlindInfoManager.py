@@ -1,3 +1,4 @@
+# pylint: skip-file
 from twisted.internet import defer
 from ValuableBlobInfo import ValuableBlobInfo
 import os

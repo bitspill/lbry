@@ -1,3 +1,4 @@
+# pylint: skip-file
 from zope.interface import Interface
 
 

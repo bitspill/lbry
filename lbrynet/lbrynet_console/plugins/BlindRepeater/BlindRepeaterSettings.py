@@ -1,3 +1,4 @@
+# pylint: skip-file
 from twisted.internet import threads, defer
 import json
 import unqlite

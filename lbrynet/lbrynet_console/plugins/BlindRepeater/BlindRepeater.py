@@ -1,3 +1,4 @@
+# pylint: skip-file
 from twisted.internet import defer
 from twisted.python.failure import Failure
 from lbrynet.core.client.BlobRequester import BlobRequester

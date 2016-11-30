@@ -1,3 +1,4 @@
+# pylint: skip-file
 from zope.interface import implements
 from lbrynet.interfaces import IProgressManager
 from twisted.internet import defer

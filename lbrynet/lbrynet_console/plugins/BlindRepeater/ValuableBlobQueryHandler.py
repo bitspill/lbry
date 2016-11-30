@@ -1,3 +1,4 @@
+# pylint: skip-file
 from lbrynet.interfaces import IQueryHandlerFactory, IQueryHandler
 from zope.interface import implements
 from twisted.internet import defer

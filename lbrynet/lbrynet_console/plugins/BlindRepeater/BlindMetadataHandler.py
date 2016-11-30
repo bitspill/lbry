@@ -1,3 +1,4 @@
+# pylint: skip-file
 from zope.interface import implements
 from lbrynet.interfaces import IMetadataHandler, IRequestCreator
 from lbrynet.core.client.ClientRequest import ClientRequest, ClientPaidRequest

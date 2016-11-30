@@ -1,3 +1,4 @@
+# pylint: skip-file
 from lbrynet.lbrynet_console import Plugin
 from twisted.internet import defer
 from lbrynet.conf import settings

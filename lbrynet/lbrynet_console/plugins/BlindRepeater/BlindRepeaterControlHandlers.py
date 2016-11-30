@@ -1,3 +1,4 @@
+# pylint: skip-file
 from lbrynet.lbrynet_console.ControlHandlers import CommandHandler, CommandHandlerFactory
 from lbrynet.lbrynet_console.ControlHandlers import RecursiveCommandHandler, ModifyPaymentRate
 from twisted.internet import defer

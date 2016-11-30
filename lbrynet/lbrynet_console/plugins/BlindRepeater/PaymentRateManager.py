@@ -1,3 +1,4 @@
+# pylint: skip-file
 from lbrynet.core.PaymentRateManager import PaymentRateManager
 
 
