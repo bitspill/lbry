@@ -74,6 +74,8 @@ class HostedEncryptedFile(resource.Resource):
         return d
 
     def render_GET(self, request):
+        if settings.allowed_origin:
+            request.setHeader("Access-Control-Allow-Origin", settings.allowed_origin)
         request.setHeader("Content-Security-Policy", "sandbox")
         if 'name' in request.args.keys():
             if request.args['name'][0] != 'lbry' and request.args['name'][0] not in self._api.waiting_on.keys():
@@ -86,6 +88,11 @@ class HostedEncryptedFile(resource.Resource):
                 request.redirect(settings.UI_ADDRESS)
                 request.finish()
             return server.NOT_DONE_YET
+
+    def render_OPTIONS(self, request):
+        if settings.allowed_origin:
+            request.setHeader("Access-Control-Allow-Origin", settings.allowed_origin)
+        return ''
 
     def _responseFailed(self, err, call):
         call.addErrback(lambda err: err.trap(error.ConnectionDone))
@@ -104,12 +111,19 @@ class EncryptedFileUpload(resource.Resource):
         self._api = api
 
     def render_POST(self, request):
+        if settings.allowed_origin:
+            request.setHeader("Access-Control-Allow-Origin", settings.allowed_origin)
         origfilename = request.args['file_filename'][0]
         # Temp file created by request
         uploaded_file = request.args['file'][0]
         newpath = move_to_temp_dir_and_restore_filename(uploaded_file, origfilename)
         self._api.uploaded_temp_files.append(newpath)
         return json.dumps(newpath)
+
+    def render_OPTIONS(self, request):
+        if settings.allowed_origin:
+            request.setHeader("Access-Control-Allow-Origin", settings.allowed_origin)
+        return ''
 
 
 def move_to_temp_dir_and_restore_filename(uploaded_file, origfilename):
