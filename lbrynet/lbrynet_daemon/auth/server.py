@@ -240,9 +240,14 @@ class AuthJSONRPCServer(AuthorizedBase):
         if settings.API_INTERFACE == '0.0.0.0':
             return True
         server, port = self.get_server_port(source)
-        return (
-            server == settings.API_INTERFACE and
-            port == settings.api_port)
+        target_server, target_port = self.get_target()
+        return server == target_server and port == target_port
+
+    def get_target(self):
+        if settings.allowed_origin:
+            return self.get_server_port(settings.allowed_origin)
+        else:
+            return settings.API_INTERFACE, settings.api_port
 
     def get_server_port(self, origin):
         parsed = urlparse.urlparse(origin)
