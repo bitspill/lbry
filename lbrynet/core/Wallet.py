@@ -504,9 +504,9 @@ class Wallet(object):
         try:
             metadata = Metadata(json.loads(result['value']))
         except (TypeError, ValueError, ValidationError):
-            return Failure(InvalidStreamInfoError(name, result['value']))
+            raise InvalidStreamInfoError(name, result['value'])
         sd_hash = metadata['sources']['lbry_sd_hash']
-        claim_outpoint = ClaimOutpoint(result['txid'], result['n']) 
+        claim_outpoint = ClaimOutpoint(result['txid'], result['n'])
         d = self._save_name_metadata(name, claim_outpoint, sd_hash)
         d.addCallback(lambda _: self.get_claimid(name, result['txid'], result['n']))
         d.addCallback(lambda cid: _log_success(cid))
@@ -515,7 +515,9 @@ class Wallet(object):
 
     def get_claim(self, name, claim_id):
         d = self.get_claims_for_name(name)
-        d.addCallback(lambda claims: next(claim for claim in claims['claims'] if claim['claimId'] == claim_id))
+        d.addCallback(
+            lambda claims: next(
+                claim for claim in claims['claims'] if claim['claimId'] == claim_id))
         return d
 
     def get_claimid(self, name, txid, nout):
@@ -524,10 +526,15 @@ class Wallet(object):
                 return defer.succeed(claim_id)
             else:
                 d = self.get_claims_from_tx(txid)
-                d.addCallback(lambda claims: next(c for c in claims if c['name'] == name and c['nOut'] == claim_outpoint['nout']))
-                d.addCallback(lambda claim: self._update_claimid(claim['claimId'], name, ClaimOutpoint(txid, claim['nOut'])))
+                d.addCallback(
+                    lambda claims: next(
+                        c for c in claims if c['name'] == name and
+                        c['nOut'] == claim_outpoint['nout']))
+                d.addCallback(
+                    lambda claim: self._update_claimid(
+                        claim['claimId'], name, ClaimOutpoint(txid, claim['nOut'])))
                 return d
-        claim_outpoint = ClaimOutpoint(txid, nout) 
+        claim_outpoint = ClaimOutpoint(txid, nout)
         d = self._get_claimid_for_tx(name, claim_outpoint)
         d.addCallback(_get_id_for_return)
         return d
@@ -542,7 +549,12 @@ class Wallet(object):
 
         def _get_my_unspent_claim(claims):
             for claim in claims:
-                if claim['name'] == name and not claim['is spent'] and not claim.get('supported_claimid', False):
+                is_unspent = (
+                    claim['name'] == name and
+                    not claim['is spent'] and
+                    not claim.get('supported_claimid', False)
+                )
+                if is_unspent:
                     return claim
             return False
 
@@ -569,8 +581,10 @@ class Wallet(object):
         result['txid'] = claim['txid']
         result['nout'] = claim['n']
         result['value'] = metadata if metadata else json.loads(claim['value'])
-        result['supports'] = [{'txid': support['txid'], 'n': support['n']} for support in claim['supports']]
-        result['meta_version'] = meta_version if meta_version else result['value'].get('ver', '0.0.1')
+        result['supports'] = [
+            {'txid': support['txid'], 'n': support['n']} for support in claim['supports']]
+        result['meta_version'] = (
+            meta_version if meta_version else result['value'].get('ver', '0.0.1'))
         return result
 
     def _get_claim_info(self, name, claim_outpoint):
@@ -589,8 +603,9 @@ class Wallet(object):
                                                                   claim,
                                                                   metadata=metadata,
                                                                   meta_version=meta_ver))
-            log.debug("get claim info lbry://%s metadata: %s, claimid: %s", name, meta_ver, claim['claimId'])
-
+            log.info(
+                "get claim info lbry://%s metadata: %s, claimid: %s",
+                name, meta_ver, claim['claimId'])
             return d
 
         d = self.get_claimid(name, claim_outpoint['txid'], claim_outpoint['nout'])
@@ -614,7 +629,8 @@ class Wallet(object):
                 msg = 'Claim to name {} failed: {}'.format(name, claim_out['reason'])
                 raise Exception(msg)
             claim_outpoint = ClaimOutpoint(claim_out['txid'], claim_out['nout'])
-            log.debug("Saving metadata for claim %s %d" % (claim_outpoint['txid'], claim_outpoint['nout']))
+            log.info("Saving metadata for claim %s %d",
+                     claim_outpoint['txid'], claim_outpoint['nout'])
             d = self._save_name_metadata(name, claim_outpoint, metadata['sources']['lbry_sd_hash'])
             d.addCallback(lambda _: claim_out)
             return d
@@ -627,9 +643,10 @@ class Wallet(object):
                 log.debug("Updating over own claim")
                 d = self.update_metadata(metadata, claim['value'])
                 claim_outpoint = ClaimOutpoint(claim['txid'], claim['nOut'])
-                d.addCallback(lambda new_metadata: self._send_name_claim_update(name, claim['claim_id'],
-                                                                                claim_outpoint,
-                                                                                new_metadata, _bid))
+                d.addCallback(
+                    lambda new_metadata: self._send_name_claim_update(name, claim['claim_id'],
+                                                                      claim_outpoint,
+                                                                      new_metadata, _bid))
                 return d
 
         meta = Metadata(m)
